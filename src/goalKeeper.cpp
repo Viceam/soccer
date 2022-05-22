@@ -65,7 +65,7 @@ DPoint NuBotControl::goalKeeper::bisector()
     auto k = divk(up_k, down_k);
     //确保是内角平分线
     k = ((ball_pos.y_ > 0) ? fabs(k) : -fabs(k));
-    return DPoint(-1075.0, -k * 1075 + ball_pos.y_ - k * ball_pos.x_);
+    return DPoint(-1050.0, -k * 1050 + ball_pos.y_ - k * ball_pos.x_);
 }
 
 //获取目标点
@@ -74,11 +74,11 @@ DPoint NuBotControl::goalKeeper::position()
 
     auto num = getArea();
     if (num == 4)
-        return DPoint(-1075, 120);
+        return DPoint(-1050, 120);
     if (num == 5)
-        return DPoint(-1075, -120);
+        return DPoint(-1050, -120);
     if (num == 6)
-        return DPoint(-1075, 0);
+        return DPoint(-1050, 0);
 
     //角平分线站位
     if (num == 3)
@@ -101,7 +101,7 @@ DPoint NuBotControl::goalKeeper::position()
     }
 
     // num == 1 的情况
-    return DPoint(-1075, 0);
+    return DPoint(-1050, 0);
 }
 
 //运行函数
