@@ -30,6 +30,14 @@ if (!shoot_flag)
         action_cmd_.rotate_acton = TurnForShoot;
         action_cmd_.rotate_mode = 0;
 
+        auto pre_for_shoot = [this]()
+        {
+            if (world_model_info_.RobotInfo_[0].getLocation().y_ > 0)
+                return world_model_info_.field_info_.ourGoal_[GOAL_MIDLOWER];
+            else
+                return world_model_info_.field_info_.ourGoal_[GOAL_MIDLOWER];
+        };
+
         static DPoint shoot_target = pre_for_shoot();
         // DPoint mid((d1.x_ + d2.x_) / 2.0, (d1.y_ + d2.y_) / 2.0);
         // auto shoot_line = mid - robot_pos_;
