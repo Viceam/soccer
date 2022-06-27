@@ -73,63 +73,79 @@ DPoint NuBotControl::goalKeeper::position()
 {
 
     auto num = getArea();
-    if (num == 4)
-        return DPoint(-1050, 120);
-    if (num == 5)
-        return DPoint(-1050, -120);
-    if (num == 6)
+        if (num == 4)
+            return DPoint(-1050, 120);
+        if (num == 5)
+            return DPoint(-1050, -120);
+
+        //角平分线站位
+        if (num == 3)
+            return bisector();
+
+        // num == 1,2,6 的情况
         return DPoint(-1050, 0);
-
-    //角平分线站位
-    if (num == 3)
-        return bisector();
-
-    if (num == 2)
-    {
-        //球向球门移动，垂直运动到球的路径上
-        if (ball_v.x_ < 0)
-        {
-            double k1 = ball_v.y_ / ball_v.x_;
-            double b1 = ball_pos.y_ - k1 * ball_pos.x_;
-            double k2 = -1.0 / k1;
-            double b2 = rb_pos.y_ - k2 * rb_pos.x_;
-            return DPoint((b2 - b1) / (k1 - k2), (k1 * b2 - k2 * b1) / (k1 - k2));
-        }
-        //否则采用角平分线站位//
-        else
-            return this->bisector();
-    }
-
-    // num == 1 的情况
-    return DPoint(-1050, 0);
 }
 
 //运行函数
 void goal_keeper()
 {
+    //根据球位置获取站位
     DPoint target = gk.position();
-
     DPoint t2r = target - robot_pos_;
-    action_cmd_.move_action = Positioned;
-    action_cmd_.rotate_acton = Positioned;
-    action_cmd_.rotate_mode = 0;
-    // if (mv2orif_e1(t2r.angle().radian_, robot_ori_.radian_, 12.0 * DEG2RAD))
-    move2target(target, robot_pos_);
+    auto b2r = ball_pos_ - robot_pos_;
 
-    //到达目标点随球转向
-    bool flag = 0;
-    if (target.distance(robot_pos_) <= 20.0)
+    if (ball_is_free() && robot_pos_.distance(ball_pos_) <= 55)
     {
-        flag = 1;
-        auto b2r = ball_pos_ - robot_pos_;
-        mv2orif_e1(b2r.angle().radian_, robot_ori_.radian_);
-    }
-
-    if (flag && !world_model_info_.RobotInfo_[1].getDribbleState() && ball_pos_.distance(robot_pos_) <= 300.0)
-    {
+        action_cmd_.handle_enable = 1;
         action_cmd_.move_action = CatchBall;
         action_cmd_.rotate_acton = CatchBall;
         action_cmd_.rotate_mode = 0;
-        move2target(ball_pos_, robot_pos_);
+        if (m_plan_.m_behaviour_.move2orif(b2r.angle().radian_, robot_ori_.radian_))
+            m_plan_.m_behaviour_.move2target(ball_pos_, robot_pos_);
+    }
+
+    if (!ball_is_free() && !world_model_info_.RobotInfo_[0].getDribbleState())
+    {
+        if (move2target(target, robot_pos_))
+        {
+            move2ori(b2r.angle().radian_, robot_ori_.radian_);
+        }
+    }
+
+    else if (ball_is_free())
+    {
+        if (ball_vel_.x_ < 0)
+        {
+            //运动到入网点
+            double k1 = ball_vel_.y_ / ball_vel_.x_;
+            double b1 = ball_pos_.y_ - k1 * ball_pos_.x_;
+            double target_y = k1 * (-1050.0) + b1;
+            if (fabs(target_y) < 120)
+            {
+                action_cmd_.handle_enable = 1;
+                action_cmd_.move_action = CatchBall;
+                action_cmd_.rotate_acton = CatchBall;
+                action_cmd_.rotate_mode = 0;
+                m_plan_.m_behaviour_.move2target(DPoint(-1050.0, target_y), robot_pos_);
+                m_plan_.m_behaviour_.move2orif(b2r.angle().radian_, robot_ori_.radian_);
+            }
+            // double k2 = -1.0 / k1;
+            // double b2 = robot_pos_.y_ - k2 * robot_pos_.x_;
+            // DPoint((b2 - b1) / (k1 - k2), (k1 * b2 - k2 * b1) / (k1 - k2));
+        }
+    }
+
+    if (world_model_info_.RobotInfo_[0].getDribbleState())
+    {
+
+        // ROS_INFO("gk pre pass");
+
+        int pass__mode = RUN;
+        auto pass_vec_ = world_model_info_.RobotInfo_[2].getLocation() - robot_pos_;
+
+        if (pass_vec_.length() > 650)
+            pass__mode = FLY;
+
+        shoot_flag = m_plan_.PassBall_Action(3, pass__mode);
     }
 }
