@@ -182,7 +182,7 @@ class movePID
 {
 public:
     movePID() : clock(0), Kp(8.0), Td(0.05), ret(0.0f) {}
-    float PID_operation(const DPoint &target, const DPoint &cur);
+    float PID_operation(const DPoint &target, const DPoint &robot_pos_);
 
 private:
     int clock;
